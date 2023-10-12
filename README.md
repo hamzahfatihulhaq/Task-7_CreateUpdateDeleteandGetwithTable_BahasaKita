@@ -1,0 +1,2 @@
+# Task-5_ImplementAESChunkDenganMongoDB_BahasaKita
+Mengimplementasikan enkripsi AES dari data yang telah di chunk kedalam API serta membuat RECIEVE API untuk memberikan respons dari proses enkripsi kepada klient. Data hasil Dekripsi disimpan di Mongodb dan Data dari Mongodb dapat didownload sesuai id dan membuat file CSV.

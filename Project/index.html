@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload File</title>
+</head>
+<body>
+    <h1>Upload File</h1>
+    <form action="/" method="post" enctype="multipart/form-data" onsubmit="sendFile(event)">
+        <input type="file" name="file" id="fileInput" />
+        <br><br>
+        <input type="submit" value="Unggah" />
+    </form>
+
+    <hr>
+    <form action="/" method="get" onsubmit="sendId(event)">
+        <label>idAudio: <input type="text" id="fileId" autocomplete="off" /></label>
+        <button>Send</button>
+    </form>
+
+    <hr>
+
+    <ul id='messages'></ul>
+    <!-- <div id="progress">0%</div> -->
+
+</body>
+    <script>
+        
+        var ws = new WebSocket("ws://localhost:8888/websocket");
+
+        ws.onmessage = function(event) {
+            // Handle pesan WebSocket lainnya
+            var messages = document.getElementById('messages')
+            var message = document.createElement('li')
+            var content = document.createTextNode(event.data)
+            message.appendChild(content)
+            messages.appendChild(message)   
+        };
+        
+
+        window.addEventListener("beforeunload", function() {
+            ws.close();
+        });
+
+        function sendFile(event){
+            event.preventDefault();
+
+            const fileInput = document.getElementById("fileInput");
+            const file = fileInput.files[0];
+
+            if (file) {
+                const formData = new FormData();
+                formData.append("file", file);
+
+                fetch("/upload", {
+                    method: "POST",
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Response:", JSON.stringify(data));
+                    ws.send(data.message)
+                })
+                .catch(error => console.error("Error:", error));
+
+                fileInput.value = '';
+            }
+        }
+
+        var idAudio;
+        function sendId(event) {
+            event.preventDefault();
+            var input = document.getElementById("fileId");
+            idAudio = input.value;
+
+            fetch("/download/" + input.value, {
+                method: "GET",
+            })
+            .then(response => {
+                if (response.status === 200) {
+                    // Jika respons adalah 200 OK, maka ID valid, dan Anda dapat membuat unduhan
+                    return response.blob();
+                } else {
+                    // ID tidak valid atau file tidak ditemukan
+                    alert("ID is invalid or file not found");
+                    return Promise.reject("ID is invalid or file not found");
+                }
+            })  // Mengambil respons sebagai blob
+            .then(blob => {
+                if (blob.size > 0) {
+                    // Membuat URL objek untuk blob
+                    var url = window.URL.createObjectURL(blob);
+                    
+                    // Buat elemen link untuk unduhan
+                    var a = document.createElement("a");
+                    a.style.display = "none";
+                    a.href = url;
+
+                    // Mengatur tipe konten menjadi CSV dan menambahkan ekstensi .csv ke nama berkas
+                    a.setAttribute("download", idAudio + ".csv");
+                    console.log(idAudio + ".csv");
+                    document.body.appendChild(a);
+
+                    // Klik link secara otomatis untuk memulai unduhan
+                    a.click();
+
+                    // Hapus elemen link setelah selesai
+                    document.body.removeChild(a);
+
+                    // Hapus URL objek setelah selesai
+                    window.URL.revokeObjectURL(url);
+                } else {
+                    alert("File not found");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+            input.value = ''
+        }
+
+    </script>
+</html>

@@ -1,0 +1,7 @@
+pycryptodome
+pymongo
+tornado
+tqdm
+lorem
+python-decouple
+coverage
