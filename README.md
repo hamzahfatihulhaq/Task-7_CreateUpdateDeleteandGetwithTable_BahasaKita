@@ -1,2 +1,2 @@
-# Task-6_CodeCoverageWithTestingUnit_BahasaKita 
-Menguji code covverage dari script enkripsi AES pada API menggunakan Tornado Testing
+#  Task-7_CreateUpdateDeleteandGetwithTable_BahasaKita
+Membuat API untuk mengedit, menghapus serta dapat menampilkan data dalam bentuk table yang telah dipagination dalam websocket 
