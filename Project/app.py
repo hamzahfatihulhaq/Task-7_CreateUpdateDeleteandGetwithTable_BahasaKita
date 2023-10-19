@@ -5,6 +5,7 @@ from Handlers.uploadHandler import UploadHandler
 from Handlers.downloadHandler import DownloadHandler
 from Handlers.htmlHandler import HTMLHandler
 from Handlers.socketHanlder import ProgressWebSocket
+from Handlers.dataHandler import GetDataHandler, DataHandler
 import signal
 
 server = None
@@ -15,7 +16,9 @@ def make_app():
         (r"/", HTMLHandler),
         (r"/upload", UploadHandler),
         (r"/download/(.*)", DownloadHandler),
-        (r"/websocket", ProgressWebSocket)
+        (r"/websocket", ProgressWebSocket),
+        (r"/get_data/(.*)", GetDataHandler),
+        (r"/data/(.*)", DataHandler)
     ],
     debug=True,
     autoreload=True

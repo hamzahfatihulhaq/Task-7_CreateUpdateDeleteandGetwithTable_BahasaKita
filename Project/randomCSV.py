@@ -9,17 +9,17 @@ def generate_uuid():
 
 # Fungsi untuk menghasilkan kata acak
 def generate_word():
-    word_list = ["apple", "banana", "grape", "honeydew", "kiwi", "lemon", "Sore", "Siang", "Malam", "Pagi", "Pohon"]
+    word_list = ["Apple", "Banana", "Grape", "Honeydew", "Kiwi", "Lemon", "Afternoon", "Evening", "Night", "Morning", "Tree"]
     return random.choice(word_list)
 
 # Fungsi untuk menghasilkan deskripsi acak
 def generate_description():
-    word_list = ["apple", "banana", "grape", "honeydew", "kiwi", "lemon", "Sore", "Siang", "Malam", "Pagi", "Pohon"]
+    word_list = ["Apple", "Banana", "Grape", "Honeydew", "Kiwi", "Lemon", "Afternoon", "Evening", "Night", "Morning", "Tree"]
     return random.choice(word_list)
     # return lorem.paragraph()
 
 # Tentukan nama file CSV
-file_path = "Sampels/random_data1.csv"
+file_path = "Samples/random_data1.csv"
 
 # Tentukan ukuran file dalam byte (2 MB)
 file_size = 2 * 1024 * 1024

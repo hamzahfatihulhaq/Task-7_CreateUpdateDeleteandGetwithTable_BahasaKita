@@ -5,6 +5,7 @@ from AES_utils import decrypt_data
 from Handlers.socketHanlder import ProgressWebSocket
 from datetime import datetime
 from config.db import db
+import pandas as pd
 
 class UploadHandler(tornado.web.RequestHandler):
     async def post(self):
@@ -44,11 +45,33 @@ class UploadHandler(tornado.web.RequestHandler):
                 instance.send_complete()
             # Simpan file terenkripsi
 
-            self.write({"message": "Proses selesai"})
+            # self.write({"message": "Proses selesai"})
+
+            tables = self.create_tabel(json_data)
+            # print(tables)
+            self.write(tables)
         
         except tornado.web.HTTPError as e:
             self.set_status(e.status_code)
             self.write({"error": str(e.reason)})
+
+    def create_tabel(self, json_data):
+        page= int(self.get_argument("page",1))
+        items_per_page = int(self.get_argument("items_per_page", 10))
+
+        data_collection = db.db["DataSample"]
+        query = {
+            "date" :  json_data['date'],
+            "time" : json_data['time']
+        }
+        skip = (page - 1) * items_per_page  # Hitung berapa data yang akan dilewati
+        valid_data = data_collection.find(query).skip(skip).limit(items_per_page)
+
+        df = pd.DataFrame(list(valid_data))
+        data_json = df.to_json(orient="records")
+
+        return {"records": data_json}
+
 
     def create_unique_id(self):
         # Kode untuk membuat ID unik di sini, misalnya dengan modul uuid

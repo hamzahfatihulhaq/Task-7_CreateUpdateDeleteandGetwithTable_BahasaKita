@@ -74,7 +74,7 @@ async def decrypt_data(data, times,progress_callback):
                                     # "_id" : list_data[0],
                                     "date" : times[0],
                                     "time" : times[1],
-                                    "world" :  list_data[1],
+                                    "word" :  list_data[1],
                                     "Deskripsi" : list_data[2]
 
                                 }

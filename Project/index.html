@@ -13,35 +13,209 @@
         <input type="submit" value="Unggah" />
     </form>
 
-    <hr>
+    <!-- <hr>
+    <h1>Download File</h1>
     <form action="/" method="get" onsubmit="sendId(event)">
-        <label>idAudio: <input type="text" id="fileId" autocomplete="off" /></label>
+        <label>idAudio: <input type="text" id="dataId" autocomplete="off" /></label>
         <button>Send</button>
+    </form>
+
+    <hr> -->
+
+    <hr>
+    <h1>DATA File</h1>
+    <form action="/">
+        <label>idAudio: <input type="text" id="dataFile_idAudio" autocomplete="off" /></label>
+        <label>idData: <input type="text" id="dataFile_dataId" autocomplete="off" /></label>
+        <br><br>
+        <label>Deskripsi: <input type="text" id="dataFile_Deskripsi" autocomplete="off" /></label>
+        <label>Word: <input type="text" id="dataFile_Word" autocomplete="off" /></label>
+        <br><br>
+        <button onclick="getData(event,1)">Look Data</button>
+        <button onclick="updateData(event)">Update</button>
+        <button onclick="deleteData(event)">Delete</button>
+        <button onclick="sendId(event)">Download</button>
     </form>
 
     <hr>
 
+    <!-- RESPONS -->
+
     <ul id='messages'></ul>
+
+    <div id="pagination">
+        <button id="prevPage">Halaman Sebelumnya</button>
+        <button id="nextPage">Halaman Berikutnya</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>No.</th>
+                <th>ID</th>
+                <th>Deskripsi</th>
+                <th>Word</th>
+                <th>Date</th>
+                <th>Time</th>
+                <!-- Tambahkan header untuk setiap kolom data -->
+            </tr>
+        </thead>
+        <tbody id="table-body">
+            <!-- Data tabel akan ditampilkan di sini -->
+        </tbody>
+    </table>
+    
     <!-- <div id="progress">0%</div> -->
 
 </body>
     <script>
-        
+        var currentPage = 1; 
+        var itemsPerPage = 10; 
+        var startItem =1;
+        // Fungsi untuk menampilkan data pada halaman yang ditentukan
+       
+        // // Tambahkan event listener untuk tombol pagination
+        document.getElementById('prevPage').addEventListener('click', function() {
+            if (currentPage > 1) {
+                currentPage--;
+                getData(event, currentPage);
+            }
+        });
+
+        document.getElementById('nextPage').addEventListener('click', function() {
+            currentPage++;
+            getData(event, currentPage);
+        });
+
+        // // Tampilkan halaman pertama saat halaman dimuat
+
         var ws = new WebSocket("ws://localhost:8888/websocket");
 
         ws.onmessage = function(event) {
-            // Handle pesan WebSocket lainnya
-            var messages = document.getElementById('messages')
-            var message = document.createElement('li')
-            var content = document.createTextNode(event.data)
-            message.appendChild(content)
-            messages.appendChild(message)   
+            // console.log(event.data)
+            var data = JSON.parse(event.data);
+          
+            if (data.type == "tableData") {
+                // Data untuk tabel
+                var tableBody = document.getElementById('table-body');
+                tableBody.innerHTML = ''; // Bersihkan isi tabel sebelum menambahkan data baru
+                datas = JSON.parse(data.records)
+                // Loop melalui data dan tambahkan baris-baris ke tabel
+                datas.forEach(function(item, index) {
+                    var row = tableBody.insertRow();
+                    var cell0 = row.insertCell(0);
+                    var cell1 = row.insertCell(1);
+                    var cell2 = row.insertCell(2);
+                    var cell3 = row.insertCell(3);
+                    var cell4 = row.insertCell(4);
+                    var cell5 = row.insertCell(5);
+                    
+                    // cell0.innerHTML = "Hallow";
+                    cell0.innerHTML = startItem + index;
+                    cell1.innerHTML = item._id;
+                    cell2.innerHTML = item.Deskripsi;
+                    cell3.innerHTML = item.word;
+                    cell4.innerHTML = item.date;
+                    cell5.innerHTML = item.time;
+                });
+            } else {
+                // Data untuk elemen <ul>
+                var messages = document.getElementById('messages')
+                var message = document.createElement('li')
+                var content = document.createTextNode(event.data)
+                message.appendChild(content)
+                messages.appendChild(message) 
+            }
         };
-        
 
         window.addEventListener("beforeunload", function() {
             ws.close();
         });
+
+        function getData(event, page){
+            event.preventDefault();
+            var idAudio = document.getElementById("dataFile_idAudio").value;
+
+            startItem = (page - 1) * itemsPerPage + 1;
+
+            fetch("/get_data/" + idAudio + "?page=" + page + "&items_per_page=" + itemsPerPage, {
+                method: "GET",
+            })
+            .then(response => response.json())
+            .then(data => {
+                // console.log(data.message);
+                message = {
+                    "type": "tableData",
+                    "records": data.records
+                }
+                // console.log(message)
+                // console.log(data.records)
+                ws.send(JSON.stringify(message));
+                // ws.send(data.records)
+
+            })
+            .catch(error => console.error("Error:", error));
+
+            // fileInput.value = '';
+        }
+
+        function updateData(event){
+            event.preventDefault();
+            var idAudio = document.getElementById("dataFile_idAudio").value;
+            var idData = document.getElementById("dataFile_dataId").value;
+            var deskripsi = document.getElementById("dataFile_Deskripsi").value;
+            var word = document.getElementById("dataFile_Word").value;
+            
+            var data = JSON.stringify({
+                "id": idData,
+                "Deskripsi": deskripsi,
+                "word": word
+            });
+
+            fetch('/data/' + idAudio, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: data
+            })
+            .then(response => response.json())
+            .then(data => {
+                ws.send(JSON.stringify(data));
+
+                getData(event, currentPage);
+
+            }
+            )
+            .catch(error => console.log('error', error));
+        }
+        
+        function deleteData(event){
+            event.preventDefault();
+            var idAudio = document.getElementById("dataFile_idAudio").value;
+            var idData = document.getElementById("dataFile_dataId").value;
+
+            var data = JSON.stringify({
+                "id": idData
+            });
+
+            fetch('/data/' + idAudio, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: data
+            })
+            .then(response => response.json())
+            .then(data => {
+                ws.send(JSON.stringify(data));
+
+                getData(event, currentPage);
+            }
+            )
+            .catch(error => console.log('error', error));
+
+        }
 
         function sendFile(event){
             event.preventDefault();
@@ -59,8 +233,13 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    console.log("Response:", JSON.stringify(data));
-                    ws.send(data.message)
+                    // console.log(data.records)
+                    message = {
+                        "type": "tableData",
+                        "records": data.records
+                    }
+                    ws.send(JSON.stringify(message));
+                    console.log("berhasil")
                 })
                 .catch(error => console.error("Error:", error));
 
@@ -71,7 +250,7 @@
         var idAudio;
         function sendId(event) {
             event.preventDefault();
-            var input = document.getElementById("fileId");
+            var input = document.getElementById("dataFile_idAudio");
             idAudio = input.value;
 
             fetch("/download/" + input.value, {
@@ -117,6 +296,5 @@
             .catch(error => console.error("Error:", error));
             input.value = ''
         }
-
     </script>
 </html>
