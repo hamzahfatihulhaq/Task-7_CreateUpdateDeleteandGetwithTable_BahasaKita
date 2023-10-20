@@ -46,47 +46,308 @@ class TestHandler(AsyncHTTPTestCase):
             "====================================================================="
         )
     
-    gen_test()
-    def test_run_server(self):
-        print(
-            "========================test_run_server============================="
-        )
-        start_server(8888) 
-        # stop_server()
-        self.assertTrue(True)
-        print(
-            "====================================================================="
-        )
+    # gen_test()
+    # def test_run_server(self):
+    #     print(
+    #         "========================test_run_server============================="
+    #     )
+    #     start_server(8888) 
+    #     # stop_server()
+    #     self.assertTrue(True)
+    #     print(
+    #         "====================================================================="
+    #     )
 
-    @gen_test()
-    def test_stop_server(self):
+    # @gen_test()
+    # def test_stop_server(self):
+    #     print(
+    #         "========================test_stop_server============================="
+    #     )
+    #     try:
+    #         yield start_server(port=8889) 
+    #     except tornado.httpclient.HTTPError as e:
+    #         self.assertEqual(e.response.code, 400)
+    #     except tornado.web.HTTPError as e:
+    #         self.assertEqual(e.status_code, 400)
+    #     print(
+    #         "====================================================================="
+    #     )
+
+    # datahandler
+    @gen_test(timeout=10)
+    async def test_get_dataHandler(self):
+        client = pymongo.MongoClient("mongodb://localhost:27017")
+        db = client["my_database"]
+        collection = db["DataVerify"]
+
+        # Simulasikan sebuah filename yang valid
+        valid_filename = collection.find_one(sort=[("_id", pymongo.DESCENDING)])
+        valid_filename = valid_filename["_id"]
+
+        page =1
+        item_per_page = 10
+        response_future = self.http_client.fetch(
+            self.get_url(f"/get_data/{valid_filename}?page={page}&items_per_page={item_per_page}"),
+            method="GET"
+        )
+        response = await response_future
+
+        self.assertEqual(response.code, 200)
+        data = json.loads(response.body)
+        self.assertIn("records", data)
+    
+    @gen_test
+    def test_getdata_handler_id_not_found(self):
+        # Menguji kasus ketika file tidak ditemukan
         print(
-            "========================test_stop_server============================="
+            "========================test_GET Data_handler_file_not_found============================="
         )
         try:
-            yield start_server(port=8889) 
+            page =1
+            item_per_page = 10
+            yield self.http_client.fetch(
+                self.get_url(f"/get_data/5adda310-aa23-489b-9a83-4c6d98cccd06?page={page}&items_per_page={item_per_page}"),
+                raise_error=True
+            )
         except tornado.httpclient.HTTPError as e:
-            self.assertEqual(e.response.code, 400)
-        except tornado.web.HTTPError as e:
-            self.assertEqual(e.status_code, 400)
+            # Periksa apakah status kode yang diharapkan adalah 400
+            self.assertEqual(e.response.code, 404)
+
+        print(
+            "====================================================================="
+        )
+    
+    @gen_test
+    def test_getdata_handler_invalid_id_format(self):
+        print(
+            "========================test_download_handler_invalid_id_format============================="
+        )
+        # Menguji kasus ketika ID tidak valid
+        try:
+            page =1
+            item_per_page = 10
+            yield self.http_client.fetch(
+                self.get_url(f"/get_data/1111111?page={page}&items_per_page={item_per_page}"),
+                raise_error=True
+            )
+        except tornado.httpclient.HTTPError as e:
+            # Periksa apakah status kode yang diharapkan adalah 400
+            self.assertEqual(e.response.code, 404)
+
+        print(
+            "====================================================================="
+        )
+    
+    # # update
+    @gen_test(timeout=30)
+    async def test_edit_dataHandler(self):
+        print(
+            "========================test_UPDATE_data_handler============================="
+        )
+        client = pymongo.MongoClient("mongodb://localhost:27017")
+        db = client["my_database"]
+        collection = db["DataVerify"]
+
+        # Simulasikan sebuah filename yang valid
+        valid_filename = collection.find_one(sort=[("_id", pymongo.DESCENDING)])
+        valid_filename = valid_filename["_id"]
+
+        data = {
+            "id": "1b2e9140-c588-4026-ab3e-41a4bbd58a3f",
+            "Deskripsi": "Updated Deskripsi",
+            "word": "Updated Word"
+        }
+        response_future = self.http_client.fetch(
+            self.get_url(f"/data/{valid_filename}"),
+            method="PUT", 
+            body=json.dumps(data)
+        )
+        response = await response_future
+        
+        self.assertEqual(response.code, 200)
+        data = json.loads(response.body)
+        self.assertIn("messages", data)
+    
+    @gen_test(timeout=30)
+    def test_edit_dataHandler_id_not_found(self):
+        print(
+            "========================test_UPDATE_data_handle_id_not_foundr============================="
+        )
+        try:
+            client = pymongo.MongoClient("mongodb://localhost:27017")
+            db = client["my_database"]
+            collection = db["DataVerify"]
+
+            # Simulasikan sebuah filename yang valid
+            valid_filename = collection.find_one(sort=[("_id", pymongo.DESCENDING)])
+            valid_filename = valid_filename["_id"]
+
+            data = {
+                "id": "11111",
+                "Deskripsi": "Updated Deskripsi",
+                "word": "Updated Word"
+            }
+            yield self.http_client.fetch(
+                self.get_url(f"/data/{valid_filename}"),
+                method="PUT", 
+                body=json.dumps(data),
+                raise_error=True
+            )
+        except tornado.httpclient.HTTPError as e:
+            # Periksa apakah status kode yang diharapkan adalah 400
+            self.assertEqual(e.response.code, 404)
+
+        print(
+            "====================================================================="
+        )
+    
+    @gen_test
+    def test_putdata_handler_invalid_id_format(self):
+        # Menguji kasus ketika file tidak ditemukan
+        print(
+            "========================test_UPDATE_data_handler_invalid_id_format============================="
+        )
+        try:
+            data = {
+            "id": "1b2e9140-c588-4026-ab3e-41a4bbd58a32",
+            "Deskripsi": "Updated Deskripsi",
+            "word": "Updated Word"
+            }
+            yield self.http_client.fetch(
+                self.get_url(f"/data/d444458c-2d75-4360-b9a6-d5419634152d"),
+                method="PUT", 
+                body=json.dumps(data),
+                raise_error=True
+            )
+        except tornado.httpclient.HTTPError as e:
+            # Periksa apakah status kode yang diharapkan adalah 400
+            self.assertEqual(e.response.code, 404)
+
+        print(
+            "====================================================================="
+        )
+        
+    @gen_test
+    def test_datahandler_invalid_id_format(self):
+        print(
+            "========================test_datahandler_invalid_id_format============================="
+        )
+        # Menguji kasus ketika ID tidak valid
+        try:
+            data = {
+            "id": "1b2e9140-c588-4026-ab3e-41a4bbd58a32",
+            "Deskripsi": "Updated Deskripsi",
+            "word": "Updated Word"
+            }
+            yield self.http_client.fetch(
+                self.get_url(f"/data/11111"),
+                method="PUT", 
+                body=json.dumps(data),
+                raise_error=True
+            )
+        except tornado.httpclient.HTTPError as e:
+            # Periksa apakah status kode yang diharapkan adalah 400
+            self.assertEqual(e.response.code, 404)
+
+        print(
+            "====================================================================="
+        )
+    
+    # #Delete
+    @gen_test(timeout=10)
+    async def test_delete_dataHandler(self):
+        print(
+            "========================test_DELETE_data_handler============================="
+        )
+        client = pymongo.MongoClient("mongodb://localhost:27017")
+        db = client["my_database"]
+        collection = db["DataVerify"]
+
+        # Simulasikan sebuah filename yang valid
+        valid_filename = collection.find_one(sort=[("_id", pymongo.DESCENDING)])
+        valid_filename = valid_filename["_id"]
+
+        data = {
+            "id": "dcd38df4-26f3-40c2-945f-1c5bda5524d3"
+        }
+        response_future = self.http_client.fetch(
+            self.get_url(f"/data/{valid_filename}?id={data['id']}"),
+            method="DELETE"
+        )
+        response = await response_future
+        
+        self.assertEqual(response.code, 200)
+        data = json.loads(response.body)
+        self.assertIn("messages", data)
+    
+    @gen_test(timeout=30)
+    def test_delete_dataHandler_id_not_found(self):
+        print(
+            "========================test_DELETE_data_handle_id_not_foundr============================="
+        )
+        try:
+            client = pymongo.MongoClient("mongodb://localhost:27017")
+            db = client["my_database"]
+            collection = db["DataVerify"]
+
+            # Simulasikan sebuah filename yang valid
+            valid_filename = collection.find_one(sort=[("_id", pymongo.DESCENDING)])
+            valid_filename = valid_filename["_id"]
+
+            data = {
+                "id": "11111",
+            }
+            yield self.http_client.fetch(
+                self.get_url(f"/data/{valid_filename}?id={data['id']}"),
+                method="DELETE",
+                raise_error=True
+            )
+        except tornado.httpclient.HTTPError as e:
+            # Periksa apakah status kode yang diharapkan adalah 400
+            self.assertEqual(e.response.code, 404)
+
         print(
             "====================================================================="
         )
 
+    @gen_test
+    def test_deletedata_handler_invalid_id_format(self):
+        # Menguji kasus ketika file tidak ditemukan
+        print(
+            "========================test_DELETE_data_handler_invalid_id_format============================="
+        )
+        try:
+            data = {
+                "id": "dcd38df4-26f3-40c2-945f-1c5bda5524d3"
+            }
+            yield self.http_client.fetch(
+                self.get_url(f"/data/d444458c-2d75-4360-b9a6-d5419634152d?id={data['id']}"),
+                method="DELETE", 
+                raise_error=True
+            )
+        except tornado.httpclient.HTTPError as e:
+            # Periksa apakah status kode yang diharapkan adalah 400
+            self.assertEqual(e.response.code, 404)
 
+        print(
+            "====================================================================="
+        )
+       
+   
+    # # upload
     @gen_test(timeout=20)
     def test_upload_handler(self):
         print(
             "========================test_upload_handler============================="
         )
         # Buat file CSV sementara untuk pengujian
-        temp_csv_file = "Test/Samples/a5a333e6-64fd-4de3-87e9-c2f735d18da9_test6.csv"
+        temp_csv_file = "Test/Samples/3dee037f-df72-4b8a-a391-7534acf3bc3f.csv"
         
         # Baca isi file
         with open(temp_csv_file, 'rb') as csv_file:
             file_content = csv_file.read()
 
-        response = yield self.upload_file(file_content, "a5a333e6-64fd-4de3-87e9-c2f735d18da9_test6.csv")
+        response = yield self.upload_file(file_content, "3dee037f-df72-4b8a-a391-7534acf3bc3f.csv")
 
         # Periksa kode respons
         self.assertEqual(response.code, 200)
@@ -164,6 +425,7 @@ class TestHandler(AsyncHTTPTestCase):
         response = yield response_future
         return response
     
+    # download
     @gen_test
     async def test_download_handler(self):
         print(

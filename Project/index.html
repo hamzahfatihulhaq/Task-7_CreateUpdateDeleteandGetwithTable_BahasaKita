@@ -195,16 +195,8 @@
             var idAudio = document.getElementById("dataFile_idAudio").value;
             var idData = document.getElementById("dataFile_dataId").value;
 
-            var data = JSON.stringify({
-                "id": idData
-            });
-
-            fetch('/data/' + idAudio, {
+            fetch('/data/' + idAudio + "?id=" + idData, {
                 method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: data
             })
             .then(response => response.json())
             .then(data => {

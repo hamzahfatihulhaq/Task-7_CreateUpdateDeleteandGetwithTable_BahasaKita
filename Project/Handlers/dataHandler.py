@@ -77,9 +77,8 @@ class DataHandler(tornado.web.RequestHandler):
         valid_id = self.check_id_validity(data_id)        
         if valid_id and "Error" not in valid_id :
             data_collection = db.db["DataSample"]
-            requestData = json.loads(self.request.body)
-
-            _id = requestData["id"]
+            
+            _id = self.get_argument("id") 
             if data_collection.find_one({"_id": _id}):
                 # Menghapus data
                 data_collection.delete_one({"_id": _id})

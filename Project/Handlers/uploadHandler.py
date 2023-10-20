@@ -39,6 +39,7 @@ class UploadHandler(tornado.web.RequestHandler):
             status = await decrypt_data(file_content, times, progress_callback)
             
             if status is False:
+                verify_collection.delete_one({"_id": unique_id})
                 raise tornado.web.HTTPError(500,reason="Key incorrect or message corrupted")
 
             for instance in ProgressWebSocket.instances:
